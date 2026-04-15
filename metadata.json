@@ -1,0 +1,9 @@
+{
+  "name": "Lumina Literature",
+  "description": "A premium global platform for discovering, exploring, and purchasing literature from around the world.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}

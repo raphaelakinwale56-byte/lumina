@@ -1,0 +1,80 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Book details and metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "description": { "type": "string" },
+        "genre": { "type": "string" },
+        "price": { "type": "number" },
+        "coverImage": { "type": "string" },
+        "rating": { "type": "number" },
+        "trending": { "type": "boolean" },
+        "newRelease": { "type": "boolean" },
+        "editorsPick": { "type": "boolean" }
+      },
+      "required": ["title", "author", "price"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Purchase order details",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "bookIds": { "type": "array", "items": { "type": "string" } },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "bookIds", "total"]
+    },
+    "SavedBook": {
+      "title": "Saved Book",
+      "description": "User's personal library/wishlist item",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "bookId": { "type": "string" },
+        "status": { "type": "string", "enum": ["wishlist", "reading", "finished"] },
+        "savedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "bookId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Private user profiles"
+    },
+    "/books/{bookId}": {
+      "schema": "Book",
+      "description": "Public book catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "User purchase history"
+    },
+    "/users/{userId}/savedBooks/{savedBookId}": {
+      "schema": "SavedBook",
+      "description": "User's personal library"
+    }
+  }
+}
