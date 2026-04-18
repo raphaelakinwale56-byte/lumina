@@ -1,26 +1,31 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
-  getDoc, 
-  setDoc, 
-  collection, 
-  query, 
-  where, 
-  onSnapshot, 
   getDocFromServer,
   Timestamp
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
 
-// Initialize Firebase
+// ✅ SECURE CONFIG (from .env)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// ✅ Services
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Error Handling
+// ✅ Error Handling
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -49,7 +54,11 @@ interface FirestoreErrorInfo {
   }
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+export function handleFirestoreError(
+  error: unknown, 
+  operationType: OperationType, 
+  path: string | null
+) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
@@ -68,20 +77,22 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+
+  console.error('Firestore Error:', errInfo);
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Connection Test
+// ✅ Connection Test (optional but useful)
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration. The client is offline.");
+    if (error instanceof Error && error.message.includes('offline')) {
+      console.error("Firebase connection issue. Check your config.");
     }
   }
 }
+
 testConnection();
 
 export { Timestamp };
