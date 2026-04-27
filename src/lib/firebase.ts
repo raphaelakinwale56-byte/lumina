@@ -1,13 +1,18 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut 
+} from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
   getDocFromServer,
-  Timestamp
+  Timestamp 
 } from 'firebase/firestore';
 
-// ✅ SECURE CONFIG (from .env)
+// ✅ Firebase config (ENV ONLY)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -17,6 +22,12 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
+// 🔥 DEBUG: Confirm env is loading
+console.log("Firebase ENV:", {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+});
+
 // ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -25,7 +36,36 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// ✅ Error Handling
+
+// ===============================
+// 🔐 AUTH HELPERS (OPTIONAL)
+// ===============================
+
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("✅ User signed in:", result.user);
+    return result.user;
+  } catch (error) {
+    console.error("❌ Sign in error:", error);
+    throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    console.log("✅ User logged out");
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+  }
+};
+
+
+// ===============================
+// 🧠 FIRESTORE ERROR HANDLER
+// ===============================
+
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -42,73 +82,41 @@ interface FirestoreErrorInfo {
   authInfo: {
     userId: string | undefined;
     email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
-    providerInfo: {
-      providerId: string;
-      displayName: string | null;
-      email: string | null;
-      photoUrl: string | null;
-    }[];
-  }
+  };
 }
 
 export function handleFirestoreError(
-  error: unknown, 
-  operationType: OperationType, 
+  error: unknown,
+  operationType: OperationType,
   path: string | null
 ) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
+    operationType,
+    path,
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
     },
-    operationType,
-    path
   };
 
-  console.error('Firestore Error:', errInfo);
+  console.error('🔥 Firestore Error:', errInfo);
   throw new Error(JSON.stringify(errInfo));
 }
 
-// ✅ Connection Test (optional but useful)
+
+// ===============================
+// 🌐 CONNECTION TEST
+// ===============================
+
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
   } catch (error) {
-    if (error instanceof Error && error.message.includes('offline')) {
-      console.error("Firebase connection issue. Check your config.");
-    }
+    console.warn("⚠️ Firebase connection test:", error);
   }
 }
 
 testConnection();
 
 export { Timestamp };
-import { signInWithPopup } from "firebase/auth";
-
-export const signInWithGoogle = async () => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-
-    const user = result.user;
-
-    console.log("User signed in:", user);
-
-    return user;
-  } catch (error) {
-    console.error("Sign in error:", error);
-    throw error;
-  }
-};
