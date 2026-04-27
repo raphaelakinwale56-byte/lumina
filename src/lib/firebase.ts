@@ -96,3 +96,19 @@ async function testConnection() {
 testConnection();
 
 export { Timestamp };
+import { signInWithPopup } from "firebase/auth";
+
+export const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+
+    const user = result.user;
+
+    console.log("User signed in:", user);
+
+    return user;
+  } catch (error) {
+    console.error("Sign in error:", error);
+    throw error;
+  }
+};

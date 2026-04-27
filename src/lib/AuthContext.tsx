@@ -18,15 +18,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // 🔐 AUTH STATE LISTENER
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("🔥 AUTH STATE CHANGED:", currentUser);
+
       setUser(currentUser);
+
       if (currentUser) {
         try {
           const userDocRef = doc(db, 'users', currentUser.uid);
           const userDoc = await getDoc(userDocRef);
-          
+
           if (!userDoc.exists()) {
+            console.log("🆕 Creating new user in Firestore");
+
             await setDoc(userDocRef, {
               uid: currentUser.uid,
               email: currentUser.email,
@@ -35,35 +41,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               role: 'user',
               createdAt: serverTimestamp()
             });
+
             setIsAdmin(false);
           } else {
+            console.log("✅ Existing user found");
+
             setIsAdmin(userDoc.data()?.role === 'admin');
           }
         } catch (error) {
           handleFirestoreError(error, OperationType.GET, `users/${currentUser.uid}`);
         }
       } else {
+        console.log("🚫 No user signed in");
         setIsAdmin(false);
       }
+
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
+  // 🚀 SIGN IN (DEBUG ENABLED)
   const signIn = async () => {
+    console.log("👉 SIGN IN BUTTON CLICKED");
+
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+
+      console.log("✅ SIGN IN SUCCESS:", result.user);
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error("❌ SIGN IN ERROR:", error);
     }
   };
 
+  // 🚪 LOGOUT
   const logout = async () => {
+    console.log("👉 LOGOUT CLICKED");
+
     try {
       await signOut(auth);
+      console.log("✅ LOGGED OUT");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("❌ LOGOUT ERROR:", error);
     }
   };
 
@@ -74,9 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// 🧠 HOOK
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
